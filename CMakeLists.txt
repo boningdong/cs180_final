@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(deterred_shading)
+project(deferred_shading)
 
 #-------------------------------------------------------------------------------
 # Platform-specific settings
