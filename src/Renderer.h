@@ -15,7 +15,9 @@ class Renderer {
     void loop(void);
 
   private:
+    void render(void);
     static void resize_callback(GLFWwindow* window, int width, int height);
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
     GLFWwindow* window;
 };

@@ -10,7 +10,7 @@ Renderer::Renderer(std::string name, int width, int height) {
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    this->window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
+    window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
     if (!window) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -28,20 +28,16 @@ Renderer::Renderer(std::string name, int width, int height) {
     // opengl transforms the 2d coords to coordinates on the screen.
     glViewport(0, 0, width, height);
 
-    // register the callback function when resize
+    // register the callback functions
     glfwSetFramebufferSizeCallback(window, resize_callback);
+    glfwSetKeyCallback(window, key_callback);
 }
 
 void Renderer::loop() {
-    while (!glfwWindowShouldClose(this->window)) {
-        // input handling here
-
-        // rendering commands here
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
+    while (!glfwWindowShouldClose(window)) {
+        render();
         // check and call events and swap the buffers
-        glfwSwapBuffers(this->window);
+        glfwSwapBuffers(window);
         glfwPollEvents();
     }
 }
@@ -51,6 +47,19 @@ Renderer::~Renderer() {
     glfwTerminate();
 }
 
+void Renderer::render() {
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
 void Renderer::resize_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+}
+
+void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_ESCAPE) {
+            glfwSetWindowShouldClose(window, true);
+        }
+    }
 }
