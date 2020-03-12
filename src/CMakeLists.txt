@@ -8,6 +8,7 @@ set(APPLICATION_SOURCE
     main.cpp
     renderer.cpp
     shader.cpp
+    stb_image.cpp
 )
 
 #-------------------------------------------------------------------------------

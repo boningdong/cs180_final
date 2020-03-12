@@ -1,8 +1,12 @@
 #version 330 core
 
-uniform vec4 global_color;
+in vec3 color;
+in vec2 tex_coord;
+
 out vec4 frag_color;
 
+uniform sampler2D texture;
+
 void main() {
-    frag_color = global_color;
+    frag_color = texture(texture, tex_coord);
 }

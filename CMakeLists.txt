@@ -126,11 +126,12 @@ find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Freetype REQUIRED)
 
-# GLFW/GLAD/GLM
+# GLFW/GLAD/GLM/STB
 add_subdirectory(glfw)
 include_directories(glfw/include)
 include_directories(glad/include)
 include_directories(glm)
+include_directories(stb)
 
 #-------------------------------------------------------------------------------
 # Add subdirectories

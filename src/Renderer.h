@@ -9,6 +9,8 @@
 
 #include <string>
 
+typedef unsigned int gl_obj_t;
+
 class Renderer {
   public:
     // Initialize window named name, with dimensions, width x height
@@ -16,6 +18,7 @@ class Renderer {
     // Clean up GLFW allocation
     ~Renderer(void);
 
+    bool load_texture(const char* path);
     // Render loop. Will block until exit condition
     void loop(void);
 
@@ -32,5 +35,5 @@ class Renderer {
     // Shader
     Shader* shader;
     // IDs reserved for storing data to GPU
-    unsigned int vao, vbo, ebo;
+    gl_obj_t vao, vbo, ebo, texture;
 };
