@@ -5,6 +5,8 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
+#include "shader.h"
+
 #include <string>
 
 class Renderer {
@@ -20,8 +22,6 @@ class Renderer {
   private:
     // Rendering pipeline, called once per render loop
     void render(void);
-    // Compiles and generates shaders for initialization
-    bool generate_shaders(void);
 
     // GLFW callbacks
     static void resize_callback(GLFWwindow* window, int width, int height);
@@ -29,8 +29,8 @@ class Renderer {
 
     // Render window
     GLFWwindow* window;
+    // Shader
+    Shader* shader;
     // IDs reserved for storing data to GPU
     unsigned int vao, vbo, ebo;
-    // ID for shader program object
-    int shader;
 };

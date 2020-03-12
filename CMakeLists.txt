@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(deferred_shading)
+set(CMAKE_BUILD_TYPE Debug)
+set(CLANG_CXX_FLAGS "${CLANG_CXX_FLAGS} -g")
 
 #-------------------------------------------------------------------------------
 # Platform-specific settings
@@ -124,10 +126,11 @@ find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Freetype REQUIRED)
 
-# GLFW & GLAD
+# GLFW/GLAD/GLM
 add_subdirectory(glfw)
 include_directories(glfw/include)
 include_directories(glad/include)
+include_directories(glm)
 
 #-------------------------------------------------------------------------------
 # Add subdirectories

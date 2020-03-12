@@ -6,7 +6,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 set(APPLICATION_SOURCE
     glad.c
     main.cpp
-    Renderer.cpp
+    renderer.cpp
+    shader.cpp
 )
 
 #-------------------------------------------------------------------------------
