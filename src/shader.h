@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <string>
 
 typedef unsigned int shader_id_t;
@@ -19,10 +20,16 @@ class Shader {
     void set_float(const std::string& name, float value) const;
     // assign a global variable of type bool in shader
     void set_bool(const std::string& name, bool value) const;
-    // assign a global variable of type int in shader
-    void set_vec4i(const std::string& name, int v0, int v1, int v2, int v3) const;
-    // assign a global variable of type float in shader
-    void set_vec4f(const std::string& name, float v0, float v1, float v2, float v3) const;
+    // assign a global vectors/matrices
+    void set_vec2(const std::string& name, const glm::vec2& value) const;
+    void set_vec2(const std::string& name, float x, float y) const;
+    void set_vec3(const std::string& name, const glm::vec3& value) const;
+    void set_vec3(const std::string& name, float x, float y, float z) const;
+    void set_vec4(const std::string& name, const glm::vec4& value) const;
+    void set_vec4(const std::string& name, float x, float y, float z, float w) const;
+    void set_mat2(const std::string& name, const glm::mat2& mat) const;
+    void set_mat3(const std::string& name, const glm::mat3& mat) const;
+    void set_mat4(const std::string& name, const glm::mat4& mat) const;
 
   private:
     shader_id_t shader_id = 0;

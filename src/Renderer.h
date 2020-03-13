@@ -18,18 +18,26 @@ class Renderer {
     // Clean up GLFW allocation
     ~Renderer(void);
 
-    bool load_texture(const char* path);
+    // Loads the texture in the file at path to the slot given by slot
+    bool load_texture(const char* path, int slot);
     // Render loop. Will block until exit condition
     void loop(void);
 
   private:
-    // Rendering pipeline, called once per render loop
+    // Rendering pipeline
     void render(void);
+    // Setters for transforms on GPU
+    inline void set_model(glm::mat4& model);
+    inline void set_view(glm::mat4& view);
+    inline void set_projection(glm::mat4& projection);
 
     // GLFW callbacks
     static void resize_callback(GLFWwindow* window, int width, int height);
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
+    // Screen dimensions
+    int width;
+    int height;
     // Render window
     GLFWwindow* window;
     // Shader
