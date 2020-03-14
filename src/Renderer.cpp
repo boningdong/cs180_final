@@ -13,10 +13,23 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
+#define MOUSE_SENS 0.01f
+#define CAMERA_SPEED 0.005f
+
+#define FOV_MAX 45.0f
+#define FOV_MIN 1.0f
+#define DEFAULT_FOV FOV_MAX
+
+// Prevent flipping
+#define PITCH_MAX 89.0f
+#define PITCH_MIN -89.0f
+#define DEFAULT_PITCH 0
+
+#define DEFAULT_YAW -90
+
 const static glm::vec3 WORLD_SPACE_UP(0, 1, 0);
 const static glm::vec3 DEFAULT_CAMERA_POS(0, 0, 3);
-const static glm::vec3 CAMERA_DIRECTION(0, 0, -1);
-const float CAMERA_SPEED = 0.005f;
+const static glm::vec3 DEFAULT_CAMERA_DIR(0, 0, -1);
 
 Renderer* Renderer::instance = nullptr;
 Renderer* callback_handler = nullptr;
@@ -24,6 +37,14 @@ Renderer* callback_handler = nullptr;
 // non-static class members cannot be registered as callbacks, workaround with singleton
 void resize_callback(GLFWwindow* window, int width, int height) {
     if (callback_handler) callback_handler->_resize(width, height);
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (callback_handler) callback_handler->_handle_mouse(xpos, ypos);
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    if (callback_handler) callback_handler->_handle_scroll(yoffset);
 }
 
 // clang-format off
@@ -151,9 +172,18 @@ Renderer::Renderer() {
 
     // register the callback functions
     glfwSetFramebufferSizeCallback(window, resize_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
-    // initialize camera position
+    // capture mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // initialize viewing parameters
     camera_pos = DEFAULT_CAMERA_POS;
+    camera_dir = DEFAULT_CAMERA_DIR;
+    fov = DEFAULT_FOV;
+    pitch = DEFAULT_PITCH;
+    yaw = DEFAULT_YAW;
 }
 
 bool Renderer::load_texture(const char* path, int slot) {
@@ -186,7 +216,7 @@ bool Renderer::load_texture(const char* path, int slot) {
 void Renderer::loop() {
     while (!glfwWindowShouldClose(window)) {
         // process input
-        handle_input();
+        handle_keyboard();
 
         // clear color buffer and depth buffer
         glClearColor(0, 0, 0, 1);
@@ -208,10 +238,6 @@ void Renderer::loop() {
     }
 }
 
-void Renderer::_resize(int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
 Renderer::~Renderer() {
     delete shader;
     // clean all of the GLFW's resources
@@ -220,12 +246,12 @@ Renderer::~Renderer() {
 
 void Renderer::render() {
     glm::mat4 projection = glm::mat4(1.0f);
-    projection = glm::perspective(
-      glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
+    projection =
+      glm::perspective(glm::radians(fov), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
     set_projection(projection);
 
     glm::mat4 view = glm::mat4(1.0f);
-    view = glm::lookAt(camera_pos, camera_pos + CAMERA_DIRECTION, WORLD_SPACE_UP);
+    view = glm::lookAt(camera_pos, camera_pos + camera_dir, WORLD_SPACE_UP);
     set_view(view);
 
     // load vertex attribute configuration
@@ -243,21 +269,56 @@ void Renderer::render() {
     }
 }
 
-void Renderer::handle_input(void) {
+void Renderer::_resize(int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+void Renderer::_handle_mouse(int xpos, int ypos) {
+    static int xprev = xpos;
+    static int yprev = ypos;
+
+    yaw += (xpos - xprev) * MOUSE_SENS;
+    pitch += (yprev - ypos) * MOUSE_SENS; // invert y since 0 == top
+    xprev = xpos;
+    yprev = ypos;
+
+    if (pitch < PITCH_MIN)
+        pitch = PITCH_MIN;
+    else if (pitch > PITCH_MAX)
+        pitch = PITCH_MAX;
+
+    // calculate direction from geometry
+    camera_dir = normalize(glm::vec3(
+      cos(glm::radians(yaw)) * cos(glm::radians(pitch)),
+      sin(glm::radians(pitch)),
+      sin(glm::radians(yaw)) * cos(glm::radians(pitch))));
+}
+
+void Renderer::_handle_scroll(double offset) {
+    if (fov >= FOV_MIN && fov <= FOV_MAX) fov -= offset;
+    if (fov < FOV_MIN)
+        fov = FOV_MIN;
+    else if (fov > FOV_MAX)
+        fov = FOV_MAX;
+}
+
+void Renderer::handle_keyboard(void) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera_pos += CAMERA_SPEED * CAMERA_DIRECTION;
+        camera_pos += camera_dir * CAMERA_SPEED;
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera_pos -= CAMERA_SPEED * CAMERA_DIRECTION;
+        camera_pos -= camera_dir * CAMERA_SPEED;
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera_pos += glm::normalize(glm::cross(CAMERA_DIRECTION, WORLD_SPACE_UP)) * CAMERA_SPEED;
+        // move in the direction orthogonal to the camera direction and up vector
+        camera_pos += glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera_pos -= glm::normalize(glm::cross(CAMERA_DIRECTION, WORLD_SPACE_UP)) * CAMERA_SPEED;
+        // move in the direction orthogonal to the camera direction and up vector
+        camera_pos -= glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED;
     }
 }
 

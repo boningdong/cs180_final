@@ -17,8 +17,10 @@ class Renderer {
     bool load_texture(const char* path, int slot);
     // Render loop. Will block until exit condition
     void loop(void);
-    // For GLFW callbacks
+    // GLFW callbacks
     void _resize(int width, int height);
+    void _handle_mouse(int xpos, int ypos);
+    void _handle_scroll(double offset);
 
   private:
     // Singleton instance
@@ -30,7 +32,7 @@ class Renderer {
     // Rendering pipeline
     void render(void);
     // Handle keyboard input
-    void handle_input(void);
+    void handle_keyboard(void);
     // Setters for transforms on GPU
     inline void set_model(glm::mat4& model);
     inline void set_view(glm::mat4& view);
@@ -39,8 +41,12 @@ class Renderer {
     // Screen dimensions
     int width;
     int height;
-    // Camera position in world-space
-    glm::vec3 camera_pos;
+    // Camera position/direction in world-space
+    glm::vec3 camera_pos, camera_dir;
+    // Rotational position
+    float pitch, yaw;
+    // Field of view (degrees)
+    float fov;
     // Render window
     GLFWwindow* window;
     // Shader
