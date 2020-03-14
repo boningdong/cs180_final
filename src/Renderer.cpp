@@ -10,6 +10,22 @@
 #define VERTEX_SHADER_PATH "shaders/vertex.vs"
 #define FRAGMENT_SHADER_PATH "shaders/fragment.fs"
 
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
+
+const static glm::vec3 WORLD_SPACE_UP(0, 1, 0);
+const static glm::vec3 DEFAULT_CAMERA_POS(0, 0, 3);
+const static glm::vec3 CAMERA_DIRECTION(0, 0, -1);
+const float CAMERA_SPEED = 0.005f;
+
+Renderer* Renderer::instance = nullptr;
+Renderer* callback_handler = nullptr;
+
+// non-static class members cannot be registered as callbacks, workaround with singleton
+void resize_callback(GLFWwindow* window, int width, int height) {
+    if (callback_handler) callback_handler->_resize(width, height);
+}
+
 // clang-format off
 float vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -69,15 +85,13 @@ glm::vec3 cube_positions[] = {
 };
 // clang-format on
 
-unsigned int indices[] = {
-    0, 1, 3, // first triangle
-    1, 2, 3  // second triangle
-};
+Renderer* Renderer::get_instance() {
+    if (!instance) instance = new Renderer;
+    return instance;
+}
 
-Renderer::Renderer(std::string name, int width, int height) {
-    this->width = width;
-    this->height = height;
-
+Renderer::Renderer() {
+    callback_handler = this;
     glfwInit();
     // make sure the opengl version is 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -88,7 +102,7 @@ Renderer::Renderer(std::string name, int width, int height) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // generate window
-    window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
+    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "CS180 Final", NULL, NULL);
     if (!window) {
         std::cout << "Failed to create GLFW window" << std::endl;
         exit(1);
@@ -104,6 +118,7 @@ Renderer::Renderer(std::string name, int width, int height) {
     // use Z-buffer
     glEnable(GL_DEPTH_TEST);
 
+    // compile and initialize shaders
     shader = new Shader(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
 
     // generate gl object for vertex array (attributes)
@@ -111,17 +126,15 @@ Renderer::Renderer(std::string name, int width, int height) {
     // generate gl object for vertex buffer (data)
     glGenBuffers(1, &vbo);
     // generate gl object for element buffer (unique indices)
-    glGenBuffers(1, &ebo);
+    // glGenBuffers(1, &ebo);
+
     // bind vertex array object (to save vertex configuration)
     glBindVertexArray(vao);
     // bind vertex buffer object (buffer for data)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    // bind element buffer object (buffer for unique indices)
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
     // copy data from vbo buffer to GPU
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // copy data from ebo buffer to GPU
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     // configure vertex attributes (will be saved to vao)
     // * location 0
     // * number of items in structure
@@ -138,7 +151,9 @@ Renderer::Renderer(std::string name, int width, int height) {
 
     // register the callback functions
     glfwSetFramebufferSizeCallback(window, resize_callback);
-    glfwSetKeyCallback(window, key_callback);
+
+    // initialize camera position
+    camera_pos = DEFAULT_CAMERA_POS;
 }
 
 bool Renderer::load_texture(const char* path, int slot) {
@@ -170,6 +185,9 @@ bool Renderer::load_texture(const char* path, int slot) {
 
 void Renderer::loop() {
     while (!glfwWindowShouldClose(window)) {
+        // process input
+        handle_input();
+
         // clear color buffer and depth buffer
         glClearColor(0, 0, 0, 1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -190,6 +208,10 @@ void Renderer::loop() {
     }
 }
 
+void Renderer::_resize(int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
 Renderer::~Renderer() {
     delete shader;
     // clean all of the GLFW's resources
@@ -198,11 +220,12 @@ Renderer::~Renderer() {
 
 void Renderer::render() {
     glm::mat4 projection = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+    projection = glm::perspective(
+      glm::radians(45.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f);
     set_projection(projection);
 
     glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+    view = glm::lookAt(camera_pos, camera_pos + CAMERA_DIRECTION, WORLD_SPACE_UP);
     set_view(view);
 
     // load vertex attribute configuration
@@ -220,6 +243,24 @@ void Renderer::render() {
     }
 }
 
+void Renderer::handle_input(void) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera_pos += CAMERA_SPEED * CAMERA_DIRECTION;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera_pos -= CAMERA_SPEED * CAMERA_DIRECTION;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera_pos += glm::normalize(glm::cross(CAMERA_DIRECTION, WORLD_SPACE_UP)) * CAMERA_SPEED;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera_pos -= glm::normalize(glm::cross(CAMERA_DIRECTION, WORLD_SPACE_UP)) * CAMERA_SPEED;
+    }
+}
+
 void Renderer::set_model(glm::mat4& model) {
     shader->set_mat4("model", model);
 }
@@ -230,16 +271,4 @@ void Renderer::set_view(glm::mat4& view) {
 
 void Renderer::set_projection(glm::mat4& projection) {
     shader->set_mat4("projection", projection);
-}
-
-void Renderer::resize_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
-
-void Renderer::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        if (key == GLFW_KEY_ESCAPE) {
-            glfwSetWindowShouldClose(window, true);
-        }
-    }
 }
