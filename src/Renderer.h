@@ -17,6 +17,10 @@ class Renderer {
     bool load_texture(const char* path, int slot);
     // Render loop. Will block until exit condition
     void loop(void);
+    // Light render
+    void init_objects();
+    void init_light();
+    void load_model();
     // GLFW callbacks
     void _resize(int width, int height);
     void _handle_mouse(int xpos, int ypos);
@@ -51,6 +55,8 @@ class Renderer {
     GLFWwindow* window;
     // Shader
     Shader* shader;
+    Shader* lightShader;
     // IDs reserved for storing data to GPU
     unsigned int vao, vbo, ebo, texture;
+    unsigned int lvao;
 };
