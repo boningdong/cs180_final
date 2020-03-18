@@ -1,39 +1,39 @@
 #version 330 core
 
-// in vec2 tex_coord;
-in vec3 fragPos;
+in vec3 pos;
 in vec3 normal;
+in vec2 texcoords;
 
-out vec4 fragColor;
+uniform vec3 light_pos;
+uniform vec3 view_pos;
 
-uniform sampler2D obj_texture;
-uniform vec3 lightColor;
-uniform vec3 objectColor;
-uniform vec3 lightPos;
-uniform vec3 viewPos;
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_diffuse2;
+uniform sampler2D texture_diffuse3;
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_specular2;
+
+out vec4 frag_color;
 
 void main() {
-    // frag_color = texture(obj_texture, tex_coord);
-    // frag_color = vec4(0.5f, 0.5f, 0.6f, 1.0f);
-
-    // ambient color
-    float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * lightColor;
-    // fragColor = vec4(ambient * objectColor, 1.0);
+    // light color
+    vec3 light_diffuse = vec3(1.0f, 1.0f, 1.0f);
+    vec3 light_ambient = vec3(0.2f, 0.2f, 0.2f);
+    vec3 light_specular = vec3(1.0f, 1.0f, 1.0f);
 
     // diffuse color
     vec3 norm = normalize(normal);
-    vec3 lightDir = normalize(lightPos - fragPos);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
-    
+    vec3 light_dir = normalize(light_pos - pos);
+    float diff = max(dot(norm, light_dir), 0.0);
+    vec3 diffuse = light_diffuse * diff * vec3(texture(texture_diffuse1, texcoords));
+    vec3 ambient = light_ambient * vec3(texture(texture_diffuse1, texcoords));
 
     // Specular color
-    float specularStrength = 0.5;
-    vec3 viewDir = normalize(viewPos - fragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 128);
-    vec3 specular = specularStrength * spec * lightColor;
-    vec3 result = (ambient + diffuse + specular) * objectColor;
-    fragColor = vec4(result, 1.0f);
+    vec3 view_dir = normalize(view_pos - pos);
+    vec3 reflect_dir = reflect(-light_dir, norm);
+    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+    vec3 specular = light_specular * spec * vec3(texture(texture_specular1, texcoords));
+    vec3 result = ambient + diffuse + specular;
+    frag_color = vec4(result, 1.0f);
+    // frag_color = vec4(1.0, 1.0, 1.0, 1.0);
 }

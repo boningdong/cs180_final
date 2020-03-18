@@ -4,9 +4,8 @@
 #include <iostream>
 
 int main() {
-    Renderer* renderer = Renderer::get_instance();
-    renderer->load_texture("res/textures/container.jpg", 0);
-    renderer->loop();
+  Renderer *renderer = Renderer::get_instance();
+  renderer->loop();
 
-    return 0;
+  return 0;
 }

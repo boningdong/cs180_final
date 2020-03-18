@@ -6,6 +6,8 @@
 // clang-format on
 
 #include "shader.h"
+#include "mesh.h"
+#include "model.h"
 
 #include <string>
 
@@ -13,13 +15,8 @@ class Renderer {
   protected:
   public:
     static Renderer* get_instance();
-    // Loads the texture in the file at path to the slot given by slot
-    bool load_texture(const char* path, int slot);
     // Render loop. Will block until exit condition
     void loop(void);
-    // Light render
-    void init_objects();
-    void init_light();
     void load_model();
     // GLFW callbacks
     void _resize(int width, int height);
@@ -57,6 +54,8 @@ class Renderer {
     Shader* shader;
     Shader* lightShader;
     // IDs reserved for storing data to GPU
-    unsigned int vao, vbo, ebo, texture;
+    unsigned int vao, vbo, ebo, texture, specmap;
     unsigned int lvao;
+    Model nanosuit;
+
 };

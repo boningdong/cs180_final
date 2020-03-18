@@ -9,6 +9,8 @@ set(APPLICATION_SOURCE
     renderer.cpp
     shader.cpp
     stb_image.cpp
+    mesh.cpp
+    model.cpp
 )
 
 #-------------------------------------------------------------------------------
@@ -36,7 +38,8 @@ link_directories(
 #-------------------------------------------------------------------------------
 add_executable(deferred_shading ${APPLICATION_SOURCE})
 
-target_link_libraries( deferred_shading
+target_link_libraries( deferred_shading 
+    assimp
     # CGL ${CGL_LIBRARIES}
     # glew ${GLEW_LIBRARIES}
     glfw ${GLFW_LIBRARIES}
