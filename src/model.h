@@ -10,11 +10,12 @@
 
 class Model {
 public:
+  glm::vec3 pos;
   std::vector<Texture> textures_loaded;
   std::vector<Mesh> meshes;
   std::string directory;
   Model() {}
-  Model(const char* path) { loadModel(path); }
+  Model(const char* path, glm::vec3 pos = glm::vec3(0.f, 0.f, 0.f)) : pos(pos) { loadModel(path); }
   void Draw(Shader shader);
   
 private:

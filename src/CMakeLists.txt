@@ -11,6 +11,8 @@ set(APPLICATION_SOURCE
     stb_image.cpp
     mesh.cpp
     model.cpp
+    light.cpp
+    scene.cpp
 )
 
 #-------------------------------------------------------------------------------

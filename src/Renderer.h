@@ -7,7 +7,7 @@
 
 #include "shader.h"
 #include "mesh.h"
-#include "model.h"
+#include "scene.h"
 
 #include <string>
 
@@ -17,7 +17,6 @@ class Renderer {
     static Renderer* get_instance();
     // Render loop. Will block until exit condition
     void loop(void);
-    void load_model();
     // GLFW callbacks
     void _resize(int width, int height);
     void _handle_mouse(int xpos, int ypos);
@@ -56,6 +55,8 @@ class Renderer {
     // IDs reserved for storing data to GPU
     unsigned int vao, vbo, ebo, texture, specmap;
     unsigned int lvao;
-    Model nanosuit;
+
+    // scene
+    Scene scene;
 
 };

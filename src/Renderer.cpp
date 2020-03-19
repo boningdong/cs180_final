@@ -6,10 +6,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <stdlib.h>
+#include "light.h"
 
-#define VERTEX_SHADER_PATH "shaders/vertex.vs"
-#define FRAGMENT_SHADER_PATH "shaders/fragment.fs"
-#define FRAGMETN_LIGHT_PATH "shaders/lightfrag.fs"
+#define VERTEX_SHADER_PATH "shaders/vertModel.vs"
+#define FRAGMENT_SHADER_PATH "shaders/fragModel.fs"
+#define FRAGMETN_LIGHT_PATH "shaders/fragLight.fs"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -54,67 +55,6 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     callback_handler->_handle_scroll(yoffset);
 }
 
-// clang-format off
-float vertices[] = {
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-  0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f,
-  0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-  0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f, 0.0f, -1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-  0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,
-  0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-  0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-  -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, -1.0f, 0.0f, 1.0f,
-  -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, -1.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, -1.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, -1.0f, 0.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, -1.0f, 0.0f, 1.0f,
-  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, -1.0f, 0.0f, 1.0f,
-
-  0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-  0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-  0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-  0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-  0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, -1.0f, 1.0f,
-  0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 1.0f,
-  0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 1.0f,
-  0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 1.0f,
-  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f, -1.0f, 1.0f,
-  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f, -1.0f, 1.0f,
-
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-  0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  1.0f,  0.0f,
-  0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  1.0f,  0.0f,
-  -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.0f,  1.0f,  0.0f,
-  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f
-};
-
-// world space positions of our cubes
-glm::vec3 cube_positions[] = {
-  glm::vec3( 0.0f,  0.0f,  0.0f),
-  glm::vec3( 2.0f,  5.0f, -15.0f),
-  glm::vec3(-1.5f, -2.2f, -2.5f),
-  glm::vec3(-3.8f, -2.0f, -12.3f),
-  glm::vec3( 2.4f, -0.4f, -3.5f),
-  glm::vec3(-1.7f,  3.0f, -7.5f),
-  glm::vec3( 1.3f, -2.0f, -2.5f),
-  glm::vec3( 1.5f,  2.0f, -2.5f),
-  glm::vec3( 1.5f,  0.2f, -1.5f),
-  glm::vec3(-1.3f,  1.0f, -1.5f)
-};
-glm::vec3 light_position = glm::vec3(1.2f, 1.0f, 1.0f);
-// clang-format on
-
 Renderer *Renderer::get_instance() {
   if (!instance)
     instance = new Renderer;
@@ -154,10 +94,26 @@ Renderer::Renderer() {
   shader = new Shader(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
   // lightShader = new Shader(VERTEX_SHADER_PATH, FRAGMETN_LIGHT_PATH);
 
+  // initialize scene
+  scene = Scene();
   // load model here
   char actual_path[PATH_MAX + 1];
   char *ptr = realpath("res/models/nanosuit/nanosuit.obj", actual_path);
-  nanosuit = Model(actual_path);
+  Model model = Model(actual_path, glm::vec3(0, 0, 0));
+  
+  // load models to the scene
+  for (int i = 0; i < 4; i++) {
+    model.pos = glm::vec3(0, 0, -1.0f * i);
+    scene.objects.push_back(model);
+  }
+
+  // load lights to the scene
+  for (int i = 0; i < 5; i++) {
+    glm::vec3 pos(-2.0f, 2.0f, -1.0f * i);
+    glm::vec3 color(0.25f * i, 1.0f, 1 - 0.25f * i);
+    PointLight light = PointLight(pos, color, 1.0f); 
+    scene.point_lights.push_back(light); 
+  }
 
   // register the callback functions
   glfwSetFramebufferSizeCallback(window, resize_callback);
@@ -190,16 +146,9 @@ void Renderer::loop() {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // load texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    // load shaders
-    shader->use();
-
     // apply transformations and draw
     render();
-    
+
     // check and call events and swap the buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -207,6 +156,8 @@ void Renderer::loop() {
 }
 
 void Renderer::render() {
+  shader->use();
+
   glm::mat4 projection = glm::mat4(1.0f);
   projection = glm::perspective(glm::radians(fov),
                                 (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT,
@@ -218,17 +169,25 @@ void Renderer::render() {
   set_view(view);
 
   // renders obbjects
-  shader->use();
   shader->set_vec3("view_pos", camera_pos);
   shader->set_vec3("light_pos", camera_pos);
-  glm::mat4 model = glm::mat4(1.0f);
-  model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f));
-  model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
-  shader->set_mat4("model", model);
-  nanosuit.Draw(*shader);
 
-  // draw contents of VBO (bound from VAO)
-  // glDrawArrays(GL_TRIANGLES, 0, 36);
+  // render all of the objects
+  for(unsigned int i = 0; i < scene.objects.size(); i++) {
+    Model object = scene.objects[i];
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, object.pos);
+    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+    shader->set_mat4("model", model);
+    object.Draw(*shader);
+  }
+  
+  // render all of the light source using forward shading
+  // the shader is bound with the lightning class.
+  for(unsigned int i = 0; i < scene.point_lights.size(); i++) {
+    PointLight light = scene.point_lights[i];
+    light.draw(projection, view);
+  }
 }
 
 void Renderer::_resize(int width, int height) {
@@ -293,9 +252,4 @@ void Renderer::set_view(glm::mat4 &view) { shader->set_mat4("view", view); }
 
 void Renderer::set_projection(glm::mat4 &projection) {
   shader->set_mat4("projection", projection);
-}
-
-void Renderer::load_model() {
-  glBindVertexArray(vao);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
