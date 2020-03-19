@@ -89,6 +89,7 @@ Renderer::Renderer() {
 
   // use Z-buffer
   glEnable(GL_DEPTH_TEST);
+  initDeferredShading();
 
   // compile and initialize shaders
   shader = new Shader(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
@@ -129,6 +130,40 @@ Renderer::Renderer() {
   fov = DEFAULT_FOV;
   pitch = DEFAULT_PITCH;
   yaw = DEFAULT_YAW;
+}
+
+void Renderer::init_deferred_engine() {
+  glGenFramebuffers(1, &gBuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+  // add attachments to the g-buffer
+  // - position color buffer
+  glGenTextures(1, &gPosition);
+  glBindTexture(GL_TEXTURE_2D, gPosition);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_FLOAT, nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+  // - normal color buffer
+  glGenTextures(1, &gNormal);
+  glBindTexture(GL_TEXTURE_2D, gNormal);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+  // - color + specular buffer
+  glGenTextures(1, &gColorSpec);
+  glBindTexture(GL_TEXTURE_2D, gColorSpec);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gColorSpec, 0);
+  
+  // tell opengl which color buffers to draw into
+  unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+  glDrawBuffers(3, attachments);
+  
+  // release the g-buffer after initialize it.
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 Renderer::~Renderer() {
@@ -188,6 +223,40 @@ void Renderer::render() {
     PointLight light = scene.point_lights[i];
     light.draw(projection, view);
   }
+}
+
+void Renderer::render_geometry() {
+  // geometry pass
+  glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // TODO:
+  // activate geometry shader, this shader should be initialized probably using vertDeferred and fragDeferredGeometry
+  for(unsigned int i = 0; i < scene.objects.size(); i++) {
+    Model* object = &scene.objects[i];
+    // object->Draw(/* pass in the geometry shader here*/);
+  }
+} 
+
+void Renderer::render_lighting() {
+  // lighting pass
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, gPosition);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, gNormal);
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D, gColorSpec);
+
+  // TODO:
+  // activate lighting shader, probably yse fragDeferredLight directly should be fine.
+  // I am not sure if we set < 50 lights what will happen because the GLSL code will loop 50 times. (check the glsl code)
+  for(unsigned int i = 0; i < scene.point_lights.size(); i++) {
+      // set all the light uniforms.
+  }
+
+  // set view position
 }
 
 void Renderer::_resize(int width, int height) {

@@ -37,6 +37,10 @@ class Renderer {
     inline void set_model(glm::mat4& model);
     inline void set_view(glm::mat4& view);
     inline void set_projection(glm::mat4& projection);
+    // deferred shading
+    void init_deferred_engine(void);
+    void render_geometry();
+    void render_lighting();
 
     // Screen dimensions
     int width;
@@ -51,10 +55,12 @@ class Renderer {
     GLFWwindow* window;
     // Shader
     Shader* shader;
-    Shader* lightShader;
-    // IDs reserved for storing data to GPU
-    unsigned int vao, vbo, ebo, texture, specmap;
-    unsigned int lvao;
+
+    // IDs for deferred shading
+    unsigned int gBuffer; 
+    unsigned int gPosition, gNormal, gColorSpec;
+
+
 
     // scene
     Scene scene;
