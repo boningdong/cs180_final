@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-  Renderer *renderer = Renderer::get_instance();
+  Renderer* renderer = Renderer::get_instance();
   renderer->loop();
 
   return 0;

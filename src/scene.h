@@ -1,8 +1,9 @@
 #pragma once
-#include <vector>
+#include "light.h"
 #include "model.h"
 #include "shader.h"
-#include "light.h"
+
+#include <vector>
 
 class Scene {
 public:

@@ -1,7 +1,12 @@
-#include <glad/glad.h>
 #include "model.h"
+
 #include "stb_image.h"
+
+// clang-format off
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+// clang-format on
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -16,21 +21,19 @@ void Model::Draw(Shader shader) {
 
 void Model::loadModel(std::string path) {
   Assimp::Importer importer;
-  const aiScene *scene =
-      importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
-  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
-      !scene->mRootNode) {
+  const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     std::cout << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
     return;
   }
-  directory = path.substr(0, path.find_last_of('/'));
+  directory = path.substr(0, path.find_last_of("/\\"));
   processNode(scene->mRootNode, scene);
   std::cout << "Done processing node." << std::endl;
 }
 
-void Model::processNode(aiNode *node, const aiScene *scene) {
+void Model::processNode(aiNode* node, const aiScene* scene) {
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-    aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
+    aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
     meshes.push_back(processMesh(mesh, scene));
   }
   for (unsigned int i = 0; i < node->mNumChildren; i++) {
@@ -38,7 +41,7 @@ void Model::processNode(aiNode *node, const aiScene *scene) {
   }
 }
 
-Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
+Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
@@ -78,26 +81,25 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
 
   // process material
   if (mesh->mMaterialIndex >= 0) {
-    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
-    std::vector<Texture> diffuseMaps = loadMaterialTextures(
-        material, aiTextureType_DIFFUSE, "texture_diffuse");
+    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+    std::vector<Texture> diffuseMaps =
+      loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
     textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-    std::vector<Texture> specularMaps = loadMaterialTextures(
-        material, aiTextureType_SPECULAR, "texture_specular");
+    std::vector<Texture> specularMaps =
+      loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
     textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
   }
   return Mesh(vertices, indices, textures);
 }
 
-unsigned int TextureFromFile(const char *path, const std::string &directory) {
+unsigned int TextureFromFile(const char* path, const std::string& directory) {
   std::string filename = std::string(path);
   filename = directory + '/' + filename;
   // std::cout << "texture path: " << filename << std::endl;
   unsigned int texture_id;
   glGenTextures(1, &texture_id);
   int width, height, channels;
-  unsigned char *data =
-      stbi_load(filename.c_str(), &width, &height, &channels, 0);
+  unsigned char* data = stbi_load(filename.c_str(), &width, &height, &channels, 0);
   if (data) {
     GLenum format;
     if (channels == 1)
@@ -107,14 +109,12 @@ unsigned int TextureFromFile(const char *path, const std::string &directory) {
     else if (channels == 4)
       format = GL_RGBA;
     glBindTexture(GL_TEXTURE_2D, texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
-                 GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                    GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(data);
@@ -125,9 +125,8 @@ unsigned int TextureFromFile(const char *path, const std::string &directory) {
   return texture_id;
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat,
-                                                 aiTextureType type,
-                                                 std::string typeName) {
+std::vector<Texture>
+  Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName) {
   std::vector<Texture> textures;
   for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
     aiString str;

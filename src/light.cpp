@@ -66,8 +66,7 @@ PointLight::PointLight(glm::vec3 pos, glm::vec3 color, float intensity) {
   this->pos = pos;
   this->color = color;
   this->intensity = intensity;
-  if(shader == nullptr)
-    setupLight();
+  if (shader == nullptr) setupLight();
 }
 
 void PointLight::draw(glm::mat4 projection, glm::mat4 view) {
@@ -75,12 +74,12 @@ void PointLight::draw(glm::mat4 projection, glm::mat4 view) {
   shader->set_mat4("projection", projection);
   shader->set_mat4("view", view);
   shader->set_vec3("light_color", this->color);
-  
+
   glm::mat4 model(1.0f);
   model = glm::translate(model, pos);
   model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
   shader->set_mat4("model", model);
-  
+
   glBindVertexArray(vao);
   glDrawArrays(GL_TRIANGLES, 0, 36);
   glBindVertexArray(0);
@@ -93,7 +92,7 @@ void PointLight::setupLight() {
   glGenVertexArrays(1, &vao);
   glGenBuffers(1, &vbo);
 
-  // load 
+  // load
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(box_vertices), box_vertices, GL_STATIC_DRAW);
