@@ -89,7 +89,7 @@ Renderer::Renderer() {
 
   // use Z-buffer
   glEnable(GL_DEPTH_TEST);
-  initDeferredShading();
+  init_deferred_engine();
 
   // compile and initialize shaders
   shader = new Shader(VERTEX_SHADER_PATH, FRAGMENT_SHADER_PATH);
@@ -256,7 +256,8 @@ void Renderer::render_lighting() {
       // set all the light uniforms.
   }
 
-  // set view position
+  // set view position to the shader
+  
 }
 
 void Renderer::_resize(int width, int height) {
