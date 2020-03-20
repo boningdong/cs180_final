@@ -9,7 +9,6 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-// out vec3 color;
 out vec3 pos;
 out vec3 normal;
 out vec2 texcoords;

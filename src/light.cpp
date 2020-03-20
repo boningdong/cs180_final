@@ -9,6 +9,9 @@
 #include <vector>
 #include "light.h"
 
+#define LIGHT_VERT_SHADER_PATH "shaders/forward_light.vs"
+#define LIGHT_FRAG_SHADER_PATH "shaders/forward_light.fs"
+
 // the model of the point light
 // clang-format off
 static float box_vertices[] = {
@@ -62,14 +65,14 @@ unsigned int PointLight::vbo = -1;
 unsigned int PointLight::ebo = -1;
 Shader* PointLight::shader = nullptr;
 
-PointLight::PointLight(glm::vec3 pos, glm::vec3 color, float intensity) {
+PointLight::PointLight(const glm::vec3 pos, const glm::vec3 color, float intensity) {
   this->pos = pos;
   this->color = color;
   this->intensity = intensity;
   if (shader == nullptr) setupLight();
 }
 
-void PointLight::draw(glm::mat4 projection, glm::mat4 view) {
+void PointLight::draw(const glm::mat4& projection, const glm::mat4& view) {
   shader->use();
   shader->set_mat4("projection", projection);
   shader->set_mat4("view", view);
@@ -98,7 +101,7 @@ void PointLight::setupLight() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(box_vertices), box_vertices, GL_STATIC_DRAW);
 
   // vertex positions
-  // follows the layout of the shader - vertLight.vs
+  // follows the layout of the shader - forward_light.vs
   unsigned int stride = sizeof(float) * 6;
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
