@@ -13,7 +13,7 @@ struct Light {
     vec3 color;
 };
 
-const int NR_LIGHTS = 5;
+const int NR_LIGHTS = 50;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 view_pos;
 
@@ -36,6 +36,8 @@ void main() {
         vec3 view_dir = normalize(view_pos - frag_pos);
         vec3 reflect_dir = reflect(-light_dir, normal);
         vec3 spec = pow(max(dot(view_dir, reflect_dir), 0.0), 16) * specular * lights[i].color;
+        if (!(normal.x == 0 && normal.y == 0 && normal.z == 0))
+            lighting += spec;
         lighting += spec;
     }
     frag_color = vec4(lighting, 1.0);

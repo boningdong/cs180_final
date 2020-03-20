@@ -43,6 +43,8 @@ private:
 
   // Camera position/direction in world-space
   glm::vec3 camera_pos, camera_dir;
+  float dt;
+  float t_prev = 0;
   // Rotational position
   float pitch, yaw;
   // Field of view (degrees)

@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 project(deferred_shading)
-set(CMAKE_BUILD_TYPE Debug)
-set(CLANG_CXX_FLAGS "${CLANG_CXX_FLAGS} -g")
 
 #-------------------------------------------------------------------------------
 # Platform-specific settings

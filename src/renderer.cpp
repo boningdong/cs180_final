@@ -9,10 +9,15 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <stdlib.h>
+#include <time.h>
 
 #ifdef _WIN32
 #define realpath(N, R) _fullpath((R), (N), _MAX_PATH)
 #endif
+
+#define USE_DEFERRED_SHADING
+
+#define NR_LIGHTS 50 // also update in deferred_light.fs
 
 #define FORWARD_VERTEX_SHADER_PATH "shaders/forward_model.vs"
 #define FORWARD_FRAGMENT_SHADER_PATH "shaders/forward_model.fs"
@@ -21,25 +26,28 @@
 #define DEFERRED_LIGHT_VERTEX_SHADER_PATH "shaders/deferred_light.vs"
 #define DEFERRED_LIGHT_FRAGMENT_SHADER_PATH "shaders/deferred_light.fs"
 
+// desired window size
 #define _WINDOW_WIDTH 1280
 #define _WINDOW_HEIGHT 720
 
+// will be determined by framebuffer - platform specific
 int WINDOW_WIDTH;
 int WINDOW_HEIGHT;
 
 #define MOUSE_SENS 0.05f
-#define CAMERA_SPEED 0.01f
+#define CAMERA_SPEED 2.5f
 
 #define FOV_MAX 45.0f
 #define FOV_MIN 1.0f
 #define DEFAULT_FOV FOV_MAX
 
-// Prevent flipping
+// prevent flipping
 #define PITCH_MAX 89.0f
 #define PITCH_MIN -89.0f
 #define DEFAULT_PITCH 0
-
 #define DEFAULT_YAW -90
+
+#define RAND_DIST(min, max) (min + ((float)rand() / (float)RAND_MAX) * (max - min))
 
 const static glm::vec3 WORLD_SPACE_UP(0, 1, 0);
 const static glm::vec3 DEFAULT_CAMERA_POS(0, 1, 3);
@@ -48,10 +56,8 @@ const static glm::vec3 LIGHT_COLOR(1.0f, 1.0f, 1.0f);
 const static glm::vec3 OBJECT_COLOR(1.0f, 0.5f, 0.31f);
 
 static float quad_vertices[] = {
-  -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-  -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-  1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-  1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+  -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+  1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
 };
 
 Renderer* Renderer::instance = nullptr;
@@ -78,6 +84,7 @@ Renderer* Renderer::get_instance() {
 
 Renderer::Renderer() {
   callback_handler = this;
+  srand(time(NULL));
   glfwInit();
   // make sure the opengl version is 3.3
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -99,7 +106,7 @@ Renderer::Renderer() {
     std::cout << "Failed to initialize GLAD" << std::endl;
     exit(1);
   }
-  
+
   int frameBufferWidth, frameBufferHeight;
   glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
   WINDOW_HEIGHT = frameBufferHeight;
@@ -110,12 +117,10 @@ Renderer::Renderer() {
 
   // compile and initialize shaders
   forward_shader = new Shader(FORWARD_VERTEX_SHADER_PATH, FORWARD_FRAGMENT_SHADER_PATH);
-  deferred_geometry_shader =
-    new Shader(DEFERRED_GEOMETRY_VERTEX_SHADER_PATH, DEFERRED_GEOMETRY_FRAGMENT_SHADER_PATH);
-  deferred_light_shader =
-    new Shader(DEFERRED_LIGHT_VERTEX_SHADER_PATH, DEFERRED_LIGHT_FRAGMENT_SHADER_PATH);
 
+#ifdef USE_DEFERRED_SHADING
   init_deferred_engine();
+#endif // USE_DEFERRED_SHADING
 
   // initialize scene
   scene = Scene();
@@ -131,9 +136,9 @@ Renderer::Renderer() {
   }
 
   // load lights to the scene
-  for (int i = 0; i < 5; i++) {
-    glm::vec3 pos(-2.0f, 2.0f, -1.0f * i);
-    glm::vec3 color(0.25f * i, 1.0f, 1 - 0.25f * i);
+  for (int i = 0; i < NR_LIGHTS; i++) {
+    glm::vec3 pos(RAND_DIST(-5, 5), RAND_DIST(-5, 5), RAND_DIST(-5, 5));
+    glm::vec3 color(RAND_DIST(0, 1), RAND_DIST(0, 1), RAND_DIST(0, 1));
     PointLight light = PointLight(pos, color, 1.0f);
     scene.point_lights.push_back(light);
   }
@@ -155,6 +160,11 @@ Renderer::Renderer() {
 }
 
 void Renderer::init_deferred_engine() {
+  deferred_geometry_shader =
+    new Shader(DEFERRED_GEOMETRY_VERTEX_SHADER_PATH, DEFERRED_GEOMETRY_FRAGMENT_SHADER_PATH);
+  deferred_light_shader =
+    new Shader(DEFERRED_LIGHT_VERTEX_SHADER_PATH, DEFERRED_LIGHT_FRAGMENT_SHADER_PATH);
+
   glGenFramebuffers(1, &gBuffer);
   glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
   // add attachments to the g-buffer
@@ -240,25 +250,7 @@ void Renderer::render() {
   glm::mat4 view = glm::mat4(1.0f);
   view = glm::lookAt(camera_pos, camera_pos + camera_dir, WORLD_SPACE_UP);
 
-  /**************** FORWARD RENDERING ****************/
-  // forward_shader->use();
-  // // set uniforms
-  // forward_shader->set_mat4("projection", projection);
-  // forward_shader->set_mat4("view", view);
-  // forward_shader->set_vec3("view_pos", camera_pos);
-  // forward_shader->set_vec3("light_pos", camera_pos);
-
-  // // render all of the objects
-  // for (unsigned int i = 0; i < scene.objects.size(); i++) {
-  //   Model object = scene.objects[i];
-  //   glm::mat4 model = glm::mat4(1.0f);
-  //   model = glm::translate(model, object.pos);
-  //   model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-  //   forward_shader->set_mat4("model", model);
-  //   object.Draw(*forward_shader);
-  // }
-  /***************************************************/
-  /**************** DEFERRED RENDERING ***************/
+#ifdef USE_DEFERRED_SHADING
   // perform deferred rendering
   render_geometry(projection, view);
   render_lighting();
@@ -279,13 +271,27 @@ void Renderer::render() {
     GL_DEPTH_BUFFER_BIT,
     GL_NEAREST);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#else  // forward shading
+  forward_shader->use();
+  // set uniforms
+  forward_shader->set_mat4("projection", projection);
+  forward_shader->set_mat4("view", view);
+  forward_shader->set_vec3("view_pos", camera_pos);
+  forward_shader->set_vec3("light_pos", camera_pos);
+
+  // render all of the objects
+  for (unsigned int i = 0; i < scene.objects.size(); i++) {
+    Model object = scene.objects[i];
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, object.pos);
+    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+    forward_shader->set_mat4("model", model);
+    object.Draw(*forward_shader);
+  }
+#endif // USE_DEFERRED_SHADING
 
   // render all of the light source using forward shading
   // the shader is bound with the lighting class.
-  // forward_shader->use();
-  // forward_shader->set_mat4("projection", projection);
-  // forward_shader->set_mat4("view", view);
-  /***************************************************/
   for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
     scene.point_lights[i].draw(projection, view);
   }
@@ -321,7 +327,6 @@ void Renderer::render_lighting() {
   glBindTexture(GL_TEXTURE_2D, gNormal);
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
-
 
   for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
     // set light uniforms
@@ -386,21 +391,25 @@ void Renderer::_handle_scroll(double offset) {
 }
 
 void Renderer::handle_keyboard(void) {
+  float t = glfwGetTime();
+  dt = t - t_prev;
+  t_prev = t;
+
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
   }
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-    camera_pos += camera_dir * CAMERA_SPEED;
+    camera_pos += camera_dir * CAMERA_SPEED * dt;
   }
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    camera_pos -= camera_dir * CAMERA_SPEED;
+    camera_pos -= camera_dir * CAMERA_SPEED * dt;
   }
   if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
     // move in the direction orthogonal to the camera direction and up vector
-    camera_pos += glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED;
+    camera_pos += glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED * dt;
   }
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
     // move in the direction orthogonal to the camera direction and up vector
-    camera_pos -= glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED;
+    camera_pos -= glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED * dt;
   }
 }
