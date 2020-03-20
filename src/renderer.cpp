@@ -21,8 +21,11 @@
 #define DEFERRED_LIGHT_VERTEX_SHADER_PATH "shaders/deferred_light.vs"
 #define DEFERRED_LIGHT_FRAGMENT_SHADER_PATH "shaders/deferred_light.fs"
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
+#define _WINDOW_WIDTH 1280
+#define _WINDOW_HEIGHT 720
+
+int WINDOW_WIDTH;
+int WINDOW_HEIGHT;
 
 #define MOUSE_SENS 0.05f
 #define CAMERA_SPEED 0.01f
@@ -45,8 +48,10 @@ const static glm::vec3 LIGHT_COLOR(1.0f, 1.0f, 1.0f);
 const static glm::vec3 OBJECT_COLOR(1.0f, 0.5f, 0.31f);
 
 static float quad_vertices[] = {
-  -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-  1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
+  -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+  -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+  1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+  1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
 };
 
 Renderer* Renderer::instance = nullptr;
@@ -83,18 +88,22 @@ Renderer::Renderer() {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // generate window
-  window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "CS180 Final", NULL, NULL);
+  window = glfwCreateWindow(_WINDOW_WIDTH, _WINDOW_HEIGHT, "CS180 Final", NULL, NULL);
   if (!window) {
     std::cout << "Failed to create GLFW window" << std::endl;
     exit(1);
   }
   glfwMakeContextCurrent(window);
-
   // initialize glad
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
     std::cout << "Failed to initialize GLAD" << std::endl;
     exit(1);
   }
+  
+  int frameBufferWidth, frameBufferHeight;
+  glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+  WINDOW_HEIGHT = frameBufferHeight;
+  WINDOW_WIDTH = frameBufferWidth;
 
   // use Z-buffer
   glEnable(GL_DEPTH_TEST);
@@ -273,9 +282,9 @@ void Renderer::render() {
 
   // render all of the light source using forward shading
   // the shader is bound with the lighting class.
-  forward_shader->use();
-  forward_shader->set_mat4("projection", projection);
-  forward_shader->set_mat4("view", view);
+  // forward_shader->use();
+  // forward_shader->set_mat4("projection", projection);
+  // forward_shader->set_mat4("view", view);
   /***************************************************/
   for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
     scene.point_lights[i].draw(projection, view);
@@ -303,6 +312,7 @@ void Renderer::render_geometry(const glm::mat4& projection, const glm::mat4& vie
 
 void Renderer::render_lighting() {
   // lighting pass
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   deferred_light_shader->use();
   glActiveTexture(GL_TEXTURE0);
@@ -311,6 +321,7 @@ void Renderer::render_lighting() {
   glBindTexture(GL_TEXTURE_2D, gNormal);
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
+
 
   for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
     // set light uniforms
@@ -342,7 +353,7 @@ void Renderer::render_quad() {
 }
 
 void Renderer::_resize(int width, int height) {
-  glViewport(0, 0, width, height);
+  // glViewport(0, 0, width, height);
 }
 
 void Renderer::_handle_mouse(int xpos, int ypos) {
