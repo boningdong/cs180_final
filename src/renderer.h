@@ -40,6 +40,8 @@ private:
   void render_geometry(const glm::mat4& projection, const glm::mat4& view);
   void render_lighting();
   void render_quad();
+  // move objects
+  void update();
 
   // Camera position/direction in world-space
   glm::vec3 camera_pos, camera_dir;
