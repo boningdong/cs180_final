@@ -54,8 +54,8 @@ int WINDOW_HEIGHT;
 #define RAND_DIST(min, max) (min + ((float)rand() / (float)RAND_MAX) * (max - min))
 
 const static glm::vec3 WORLD_SPACE_UP(0, 1, 0);
-const static glm::vec3 DEFAULT_CAMERA_POS(0, 1, 3);
-const static glm::vec3 DEFAULT_CAMERA_DIR(0, 0, -1);
+const static glm::vec3 DEFAULT_CAMERA_POS(16.63f, 7.02f, -4.28f);
+const static glm::vec3 DEFAULT_CAMERA_DIR(-0.95f, -0.18f, 0.27f);
 const static glm::vec3 LIGHT_COLOR(1.0f, 1.0f, 1.0f);
 const static glm::vec3 OBJECT_COLOR(1.0f, 0.5f, 0.31f);
 const static glm::vec3 LIGHT_POS_MIN(-10.0f, 0, -5.0f);
