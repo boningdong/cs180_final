@@ -17,7 +17,7 @@
 
 #define USE_DEFERRED_SHADING
 
-#define NR_LIGHTS 50 // also update in deferred_light.fs
+#define NR_LIGHTS 100 // also update in deferred_light.fs
 
 #define FORWARD_VERTEX_SHADER_PATH "shaders/forward_model.vs"
 #define FORWARD_FRAGMENT_SHADER_PATH "shaders/forward_model.fs"
@@ -26,9 +26,13 @@
 #define DEFERRED_LIGHT_VERTEX_SHADER_PATH "shaders/deferred_light.vs"
 #define DEFERRED_LIGHT_FRAGMENT_SHADER_PATH "shaders/deferred_light.fs"
 
-// desired window size
+#ifdef __APPLE__ // apple retina displays behave strangely
 #define _WINDOW_WIDTH 640
 #define _WINDOW_HEIGHT 480
+#else
+#define _WINDOW_WIDTH 1280
+#define _WINDOW_HEIGHT 720
+#endif // __APPLE__
 
 // will be determined by framebuffer - platform specific
 int WINDOW_WIDTH;
@@ -36,8 +40,6 @@ int WINDOW_HEIGHT;
 
 #define MOUSE_SENS 0.05f
 #define CAMERA_SPEED 2.5f
-
-#define LIGHT_POS_MAX 5.0f
 
 #define FOV_MAX 45.0f
 #define FOV_MIN 1.0f
@@ -56,8 +58,10 @@ const static glm::vec3 DEFAULT_CAMERA_POS(0, 1, 3);
 const static glm::vec3 DEFAULT_CAMERA_DIR(0, 0, -1);
 const static glm::vec3 LIGHT_COLOR(1.0f, 1.0f, 1.0f);
 const static glm::vec3 OBJECT_COLOR(1.0f, 0.5f, 0.31f);
+const static glm::vec3 LIGHT_POS_MIN(-10.0f, 0, -5.0f);
+const static glm::vec3 LIGHT_POS_MAX(10.0f, 10.0f, 5.0f);
 
-static float quad_vertices[] = {
+const static float quad_vertices[] = {
   -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
   1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
 };
@@ -93,7 +97,7 @@ Renderer::Renderer() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #ifdef __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+#endif // __APPLE__
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // generate window
@@ -140,10 +144,10 @@ Renderer::Renderer() {
   // load lights to the scene
   for (int i = 0; i < NR_LIGHTS; i++) {
     glm::vec3 pos(
-      RAND_DIST(-LIGHT_POS_MAX, LIGHT_POS_MAX),
-      RAND_DIST(-LIGHT_POS_MAX, LIGHT_POS_MAX),
-      RAND_DIST(-LIGHT_POS_MAX, LIGHT_POS_MAX));
-    glm::vec3 color(RAND_DIST(0, 1), RAND_DIST(0, 1), RAND_DIST(0, 1));
+      RAND_DIST(LIGHT_POS_MIN.x, LIGHT_POS_MAX.x),
+      RAND_DIST(LIGHT_POS_MIN.y, LIGHT_POS_MAX.y),
+      RAND_DIST(LIGHT_POS_MIN.z, LIGHT_POS_MAX.z));
+    glm::vec3 color(RAND_DIST(0.5f, 1.0f), RAND_DIST(0.5f, 1.0f), RAND_DIST(0.5f, 1.0f));
     PointLight light = PointLight(
       pos,
       color,
@@ -310,8 +314,10 @@ void Renderer::render() {
 
   // render all of the light source using forward shading
   // the shader is bound with the lighting class.
-  for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
-    scene.point_lights[i].draw(projection, view);
+  if (render_light_cubes) {
+    for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
+      scene.point_lights[i].draw(projection, view);
+    }
   }
 }
 
@@ -388,11 +394,11 @@ void Renderer::render_quad() {
 void Renderer::update() {
   for (PointLight& light : scene.point_lights) {
     light.pos.y += light.dir * light.speed * dt;
-    if (light.pos.y > LIGHT_POS_MAX) {
-      light.pos.y = LIGHT_POS_MAX;
+    if (light.pos.y > LIGHT_POS_MAX.y) {
+      light.pos.y = LIGHT_POS_MAX.y;
       light.dir = LIGHT_DIR_DOWN;
-    } else if (light.pos.y < -LIGHT_POS_MAX) {
-      light.pos.y = -LIGHT_POS_MAX;
+    } else if (light.pos.y < LIGHT_POS_MIN.y) {
+      light.pos.y = LIGHT_POS_MIN.y;
       light.dir = LIGHT_DIR_UP;
     }
   }
@@ -432,11 +438,6 @@ void Renderer::_handle_scroll(double offset) {
 }
 
 void Renderer::handle_keyboard(void) {
-  if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
-    std::cout << "camera pos: " << camera_pos.x << " " << camera_pos.y << " " <<  camera_pos.z << std::endl;
-    std::cout << "camera dir: " << camera_dir.x << " " << camera_dir.y << " " << camera_dir.z << std::endl;
-  }
-
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);
   }
@@ -453,5 +454,12 @@ void Renderer::handle_keyboard(void) {
   if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
     // move in the direction orthogonal to the camera direction and up vector
     camera_pos -= glm::normalize(glm::cross(camera_dir, WORLD_SPACE_UP)) * CAMERA_SPEED * dt;
+  }
+  if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+    float t = glfwGetTime();
+    if (t - last_light_toggle > 0.5) {
+      render_light_cubes = !render_light_cubes;
+      last_light_toggle = t;
+    }
   }
 }

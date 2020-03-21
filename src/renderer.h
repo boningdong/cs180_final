@@ -66,6 +66,9 @@ private:
   // IDs for quad
   unsigned int vao = 0;
   unsigned int vbo;
+  // whether or not to draw light sources as cubes
+  bool render_light_cubes = true;
+  float last_light_toggle = 0;
 
   // scene
   Scene scene;

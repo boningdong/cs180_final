@@ -83,7 +83,7 @@ void PointLight::draw(const glm::mat4& projection, const glm::mat4& view) {
 
   glm::mat4 model(1.0f);
   model = glm::translate(model, pos);
-  model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+  model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
   shader->set_mat4("model", model);
 
   glBindVertexArray(vao);
