@@ -37,6 +37,8 @@ int WINDOW_HEIGHT;
 #define MOUSE_SENS 0.05f
 #define CAMERA_SPEED 2.5f
 
+#define LIGHT_POS_MAX 5.0f
+
 #define FOV_MAX 45.0f
 #define FOV_MIN 1.0f
 #define DEFAULT_FOV FOV_MAX
@@ -137,9 +139,17 @@ Renderer::Renderer() {
 
   // load lights to the scene
   for (int i = 0; i < NR_LIGHTS; i++) {
-    glm::vec3 pos(RAND_DIST(-5, 5), RAND_DIST(-5, 5), RAND_DIST(-5, 5));
+    glm::vec3 pos(
+      RAND_DIST(-LIGHT_POS_MAX, LIGHT_POS_MAX),
+      RAND_DIST(-LIGHT_POS_MAX, LIGHT_POS_MAX),
+      RAND_DIST(-LIGHT_POS_MAX, LIGHT_POS_MAX));
     glm::vec3 color(RAND_DIST(0, 1), RAND_DIST(0, 1), RAND_DIST(0, 1));
-    PointLight light = PointLight(pos, color, 1.0f);
+    PointLight light = PointLight(
+      pos,
+      color,
+      1.0f,
+      RAND_DIST(0, 1) > 0.5 ? LIGHT_DIR_UP : LIGHT_DIR_DOWN,
+      RAND_DIST(0.1f, 2.0f));
     scene.point_lights.push_back(light);
   }
 
@@ -226,6 +236,11 @@ Renderer::~Renderer() {
 
 void Renderer::loop() {
   while (!glfwWindowShouldClose(window)) {
+    // calculate frametime
+    float t = glfwGetTime();
+    dt = t - t_prev;
+    t_prev = t;
+
     // process input
     handle_keyboard();
 
@@ -235,6 +250,9 @@ void Renderer::loop() {
 
     // apply transformations and draw
     render();
+
+    // move lights
+    update();
 
     // check and call events and swap the buffers
     glfwSwapBuffers(window);
@@ -329,11 +347,21 @@ void Renderer::render_lighting() {
   glBindTexture(GL_TEXTURE_2D, gColorSpec);
 
   for (unsigned int i = 0; i < scene.point_lights.size(); i++) {
+    const PointLight& light = scene.point_lights[i];
+    const float constant = 1.0;
+    const float linear = 0.7;
+    const float quadratic = 1.8;
+    const float max_brightness = std::fmaxf(std::fmax(light.color.x, light.color.y), light.color.z);
+    float radius =
+      (-linear +
+       std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * max_brightness))) /
+      (2.0f * quadratic);
     // set light uniforms
-    deferred_light_shader->set_vec3(
-      "lights[" + std::to_string(i) + "].position", scene.point_lights[i].pos);
-    deferred_light_shader->set_vec3(
-      "lights[" + std::to_string(i) + "].color", scene.point_lights[i].color);
+    deferred_light_shader->set_vec3("lights[" + std::to_string(i) + "].position", light.pos);
+    deferred_light_shader->set_vec3("lights[" + std::to_string(i) + "].color", light.color);
+    deferred_light_shader->set_float("lights[" + std::to_string(i) + "].linear", linear);
+    deferred_light_shader->set_float("lights[" + std::to_string(i) + "].quadratic", quadratic);
+    deferred_light_shader->set_float("lights[" + std::to_string(i) + "].radius", radius);
   }
   deferred_light_shader->set_vec3("view_pos", camera_pos);
 }
@@ -355,6 +383,19 @@ void Renderer::render_quad() {
   glBindVertexArray(vao);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glBindVertexArray(0);
+}
+
+void Renderer::update() {
+  for (PointLight& light : scene.point_lights) {
+    light.pos.y += light.dir * light.speed * dt;
+    if (light.pos.y > LIGHT_POS_MAX) {
+      light.pos.y = LIGHT_POS_MAX;
+      light.dir = LIGHT_DIR_DOWN;
+    } else if (light.pos.y < -LIGHT_POS_MAX) {
+      light.pos.y = -LIGHT_POS_MAX;
+      light.dir = LIGHT_DIR_UP;
+    }
+  }
 }
 
 void Renderer::_resize(int width, int height) {
@@ -391,9 +432,6 @@ void Renderer::_handle_scroll(double offset) {
 }
 
 void Renderer::handle_keyboard(void) {
-  float t = glfwGetTime();
-  dt = t - t_prev;
-  t_prev = t;
   if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
     std::cout << "camera pos: " << camera_pos.x << " " << camera_pos.y << " " <<  camera_pos.z << std::endl;
     std::cout << "camera dir: " << camera_dir.x << " " << camera_dir.y << " " << camera_dir.z << std::endl;

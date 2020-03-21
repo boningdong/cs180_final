@@ -65,10 +65,13 @@ unsigned int PointLight::vbo = -1;
 unsigned int PointLight::ebo = -1;
 Shader* PointLight::shader = nullptr;
 
-PointLight::PointLight(const glm::vec3 pos, const glm::vec3 color, float intensity) {
+PointLight::PointLight(
+  const glm::vec3 pos, const glm::vec3 color, float intensity, int dir, float speed) {
   this->pos = pos;
   this->color = color;
   this->intensity = intensity;
+  this->dir = dir;
+  this->speed = speed;
   if (shader == nullptr) setupLight();
 }
 

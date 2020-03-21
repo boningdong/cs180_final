@@ -9,12 +9,17 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
+#define LIGHT_DIR_UP 1
+#define LIGHT_DIR_DOWN -1
+
 class PointLight {
 public:
   glm::vec3 pos;
   glm::vec3 color;
   float intensity;
-  PointLight(const glm::vec3 pos, const glm::vec3 color, float intensity);
+  int dir;
+  float speed;
+  PointLight(const glm::vec3 pos, const glm::vec3 color, float intensity, int dir, float speed);
   void draw(const glm::mat4& projection, const glm::mat4& view);
 
 private:
