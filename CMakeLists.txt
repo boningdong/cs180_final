@@ -141,3 +141,4 @@ add_subdirectory(src)
 
 # Install settings
 set(CMAKE_INSTALL_PREFIX "${deferred_shading_SOURCE_DIR}/")
+set(GLFW_BUILD_DOCS OFF)
