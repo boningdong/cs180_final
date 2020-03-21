@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 2.8)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 # Application source
 set(APPLICATION_SOURCE
     glad.c
     main.cpp
+    renderer.cpp
+    shader.cpp
+    stb_image.cpp
+    mesh.cpp
+    model.cpp
+    light.cpp
+    scene.cpp
 )
 
 #-------------------------------------------------------------------------------
@@ -31,7 +40,8 @@ link_directories(
 #-------------------------------------------------------------------------------
 add_executable(deferred_shading ${APPLICATION_SOURCE})
 
-target_link_libraries( deferred_shading
+target_link_libraries( deferred_shading 
+    assimp
     # CGL ${CGL_LIBRARIES}
     # glew ${GLEW_LIBRARIES}
     glfw ${GLFW_LIBRARIES}

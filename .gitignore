@@ -5,6 +5,8 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+bin/
+lib/
 *.o
 deferred_shading
 *.in
