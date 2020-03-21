@@ -27,8 +27,8 @@
 #define DEFERRED_LIGHT_FRAGMENT_SHADER_PATH "shaders/deferred_light.fs"
 
 // desired window size
-#define _WINDOW_WIDTH 1280
-#define _WINDOW_HEIGHT 720
+#define _WINDOW_WIDTH 640
+#define _WINDOW_HEIGHT 480
 
 // will be determined by framebuffer - platform specific
 int WINDOW_WIDTH;
@@ -126,11 +126,11 @@ Renderer::Renderer() {
   scene = Scene();
   // load model here
   char actual_path[PATH_MAX + 1];
-  char* ptr = realpath("res/models/nanosuit/nanosuit.obj", actual_path);
+  char* ptr = realpath("res/models/sponza/sponza.obj", actual_path);
   Model model = Model(actual_path, glm::vec3(0, 0, 0));
 
   // load models to the scene
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 1; i++) {
     model.pos = glm::vec3(0, 0, -1.0f * i);
     scene.objects.push_back(model);
   }
@@ -309,7 +309,7 @@ void Renderer::render_geometry(const glm::mat4& projection, const glm::mat4& vie
     Model* object = &scene.objects[i];
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, object->pos);
-    model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+    model = glm::scale(model, glm::vec3(0.02f, 0.02f, 0.02f));
     deferred_geometry_shader->set_mat4("model", model);
     object->Draw(*deferred_geometry_shader);
   }
@@ -394,6 +394,10 @@ void Renderer::handle_keyboard(void) {
   float t = glfwGetTime();
   dt = t - t_prev;
   t_prev = t;
+  if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) {
+    std::cout << "camera pos: " << camera_pos.x << " " << camera_pos.y << " " <<  camera_pos.z << std::endl;
+    std::cout << "camera dir: " << camera_dir.x << " " << camera_dir.y << " " << camera_dir.z << std::endl;
+  }
 
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     glfwSetWindowShouldClose(window, true);

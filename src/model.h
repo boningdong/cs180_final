@@ -19,6 +19,7 @@ public:
   Model() {
   }
   Model(const char* path, glm::vec3 pos = glm::vec3(0.f, 0.f, 0.f)) : pos(pos) {
+    std::cout << "Actual path: " << path << std::endl;
     loadModel(path);
   }
   void Draw(Shader shader);

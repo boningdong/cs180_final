@@ -95,7 +95,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
 unsigned int TextureFromFile(const char* path, const std::string& directory) {
   std::string filename = std::string(path);
   filename = directory + '/' + filename;
-  // std::cout << "texture path: " << filename << std::endl;
+  std::replace(filename.begin(), filename.end(), '\\', '/');
   unsigned int texture_id;
   glGenTextures(1, &texture_id);
   int width, height, channels;
@@ -119,7 +119,7 @@ unsigned int TextureFromFile(const char* path, const std::string& directory) {
 
     stbi_image_free(data);
   } else {
-    std::cout << "Texture failed to load at path: " << path << std::endl;
+    std::cout << "Texture failed to load at path: " << filename << std::endl;
     stbi_image_free(data);
   }
   return texture_id;
